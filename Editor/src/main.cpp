@@ -4,6 +4,6 @@
 
 int main() {
 	std::cout << "Hello, world" << std::endl;
-	GameEngine::SayHello();
+	GameEngine::CheckGLFW();
 	std::cin.get();
 }
