@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace mge {
+namespace GameEngine {
 
 #ifdef NDEBUG
 

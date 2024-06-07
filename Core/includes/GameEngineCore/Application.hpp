@@ -1,7 +1,7 @@
 #pragma once
 
 // My Game Engine namespace
-namespace mge {
+namespace GameEngine {
 
 	class Application {
 	public:

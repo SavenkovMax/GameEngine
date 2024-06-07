@@ -1,10 +1,11 @@
 #include <GameEngineCore/Application.hpp>
 #include <GameEngineCore/Log.hpp>
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-namespace mge {
+namespace GameEngine {
 
 	Application::Application() {
 		LOG_INFO("Welcome to spdlog!");
@@ -32,7 +33,16 @@ namespace mge {
 		}
 
 		glfwMakeContextCurrent(window);
+
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+			LOG_CRITICAL("Failed to initialize GLAD");
+			return -1;
+		}
+
+		glClearColor(0, 0, 1, 0);
+
 		while (!glfwWindowShouldClose(window)) {
+			glClear(GL_COLOR_BUFFER_BIT);
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 			OnUpdate();

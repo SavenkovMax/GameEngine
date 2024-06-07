@@ -2,7 +2,7 @@
 #include <memory>
 #include <GameEngineCore/Application.hpp>
 
-class MyApp : public mge::Application {
+class MyApp : public GameEngine::Application {
 public:
 	MyApp() : frame_(0) {}
 	virtual void OnUpdate() override {
