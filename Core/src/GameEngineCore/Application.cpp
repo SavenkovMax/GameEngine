@@ -1,5 +1,7 @@
 #include <GameEngineCore/Application.hpp>
 #include <GameEngineCore/Log.hpp>
+#include <GameEngineCore/Window.hpp>
+#include <GameEngineCore/Event.hpp>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,47 +10,48 @@
 namespace GameEngine {
 
 	Application::Application() {
-		LOG_INFO("Welcome to spdlog!");
-		LOG_ERROR("Some error message with arg: {}", 1);
-
-		LOG_WARN("Easy padding in numbers like {:08d}", 12);
-		LOG_CRITICAL("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+		LOG_INFO("Starting the application");
 	}
 
 	Application::~Application() {
-
+		LOG_INFO("Closing the application");
 	}
 
-	int Application::Start(unsigned int window_width, unsigned int window_height, const char* title) {
-		GLFWwindow* window;
+	int Application::Start(unsigned int width, unsigned int height, const char* title) {
+		pwindow_ = std::make_unique<Window>(width, height, title);
 
-		if (!glfwInit()) {
-			return -1;
-		}
+		event_dispatcher_.AddEventListener<EventMouseMoved>(
+			[](EventMouseMoved& event) {
+				LOG_INFO("[MouseMoved] mouse moved to {0}x{1}", event.x, event.y);
+			}
+		);
 
-		window = glfwCreateWindow(window_width, window_height, title, nullptr, nullptr);
-		if (!window) {
-			glfwTerminate();
-			return -1;
-		}
+		event_dispatcher_.AddEventListener<EventWindowResize>(
+			[](EventWindowResize& event) {
+				LOG_INFO("[WindowResize] window resized to {0}x{1}", event.width, event.height);
+			}
+		);
 
-		glfwMakeContextCurrent(window);
+		event_dispatcher_.AddEventListener<EventWindowClose>(
+			[&](EventWindowClose& event) {
+				LOG_INFO("[WindowClose] window closed");
+				bCloseWindow_ = true;
+			}
+		);
 
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-			LOG_CRITICAL("Failed to initialize GLAD");
-			return -1;
-		}
+		pwindow_->SetEventCallBack(
+			[&](BaseEvent& event) {
+				event_dispatcher_.Dispatch(event);
+			}
+		);
 
-		glClearColor(0, 0, 1, 0);
-
-		while (!glfwWindowShouldClose(window)) {
-			glClear(GL_COLOR_BUFFER_BIT);
-			glfwSwapBuffers(window);
-			glfwPollEvents();
+		while (!bCloseWindow_) {
+			pwindow_->OnUpdate();
 			OnUpdate();
 		}
 
-		glfwTerminate();
+		pwindow_ = nullptr;
+
 		return 0;
 	}
 }

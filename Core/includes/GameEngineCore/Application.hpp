@@ -1,6 +1,9 @@
 #pragma once
 
-// My Game Engine namespace
+#include <memory>
+
+#include <GameEngineCore/Event.hpp>
+
 namespace GameEngine {
 
 	class Application {
@@ -15,6 +18,12 @@ namespace GameEngine {
 
 		virtual int Start(unsigned int window_width, unsigned int window_height, const char* title);
 		virtual void OnUpdate() {}
+
+	private:
+		std::unique_ptr<class Window> pwindow_;
+
+		EventDispatcher event_dispatcher_;
+		bool bCloseWindow_ = false;
 	};
 
 }
