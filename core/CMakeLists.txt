@@ -11,17 +11,29 @@ set(CORE_PUBLIC_INCLUDES
 
 set(CORE_PRIVATE_INCLUDES
 	src/core/Window.hpp
+	src/core/Rendering/OpenGL/GLSLShaderProgram.hpp
+	src/core/Rendering/OpenGL/VertexBuffer.hpp
 )
 
 set(CORE_PRIVATE_SOURCES
 	src/core/Application.cpp
 	src/core/Window.cpp
+	src/core/Rendering/OpenGL/GLSLShaderProgram.cpp
+	src/core/Rendering/OpenGL/VertexBuffer.cpp
 )
 
-add_library(${CORE_PROJECT_NAME} STATIC
+set(CORE_ALL_SOURCES
 	${CORE_PUBLIC_INCLUDES}
 	${CORE_PRIVATE_INCLUDES}
 	${CORE_PRIVATE_SOURCES}
+)
+
+add_library(${CORE_PROJECT_NAME} STATIC
+	${CORE_ALL_SOURCES}
+)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES
+	${CORE_ALL_SOURCES}
 )
 
 target_include_directories(${CORE_PROJECT_NAME} PUBLIC includes)

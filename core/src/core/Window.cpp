@@ -158,7 +158,6 @@ namespace engine {
 		glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-
 		return 0;
 	}
 
