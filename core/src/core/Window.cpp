@@ -8,6 +8,10 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
+#include "core/Rendering/OpenGL/GLSLShaderProgram.hpp"
+#include "core/Rendering/OpenGL/VertexBuffer.hpp"
+#include "core/Rendering/OpenGL/VertexArray.hpp"
+
 namespace engine {
 
 	static bool is_GLFW_initialized = false;
@@ -22,6 +26,12 @@ namespace engine {
 		1.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 1.0f
+	};
+
+	GLfloat positions_colors[] = {
+		0.f, 0.5f, 0.0f,    0.0f, 1.0f, 0.0f,
+		0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f
 	};
 
 	const char* vertex_shader =
@@ -42,8 +52,14 @@ namespace engine {
 		"	frag_color = vec4(color, 1.0);"
 		"}";
 
-	GLuint shader_program;
-	GLuint vao;
+	std::unique_ptr<GLSLShaderProgram> shader_program;
+	std::unique_ptr<VertexBuffer> points_vbo;
+	std::unique_ptr<VertexBuffer> colors_vbo;
+	std::unique_ptr<VertexBuffer> positions_colors_vbo;
+
+	std::unique_ptr<VertexArray> vao_2buffers;
+	std::unique_ptr<VertexArray> vao_1buffer;
+
 
 	Window::Window(std::string title, unsigned int width, unsigned int height)
 		: m_data({ std::move(title), width, height }) {
@@ -121,42 +137,30 @@ namespace engine {
 			}
 		);
 
-		GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vs, 1, &vertex_shader, nullptr);
-		glCompileShader(vs);
+		shader_program = std::make_unique<GLSLShaderProgram>(vertex_shader, fragment_shader);
+		if (!shader_program->IsCompiled()) {
+			return -1;
+		}
 
-		GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(fs, 1, &fragment_shader, nullptr);
-		glCompileShader(fs);
+		BufferLayout buffer_layout_1vec3{
+			ShaderDataType::Float3
+		};
 
-		shader_program = glCreateProgram();
-		glAttachShader(shader_program, vs);
-		glAttachShader(shader_program, fs);
-		glLinkProgram(shader_program);
+		points_vbo = std::make_unique<VertexBuffer>(points, sizeof(points), buffer_layout_1vec3);
+		colors_vbo = std::make_unique<VertexBuffer>(colors, sizeof(colors), buffer_layout_1vec3);
 
-		glDeleteShader(vs);
-		glDeleteShader(fs);
+		vao_2buffers = std::make_unique<VertexArray>();
+		vao_2buffers->AddBuffer(*points_vbo);
+		vao_2buffers->AddBuffer(*colors_vbo);
 
-		GLuint points_vbo = 0;
-		glGenBuffers(1, &points_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+		BufferLayout buffer_layout_2vec3{
+			ShaderDataType::Float3,
+			ShaderDataType::Float3
+		};
 
-		GLuint colors_vbo = 0;
-		glGenBuffers(1, &colors_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
-
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+		vao_1buffer = std::make_unique<VertexArray>();
+		positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors, sizeof(positions_colors), buffer_layout_2vec3);
+		vao_1buffer->AddBuffer(*positions_colors_vbo);
 
 		return 0;
 	}
@@ -170,8 +174,8 @@ namespace engine {
 		glClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader_program);
-		glBindVertexArray(vao);
+		shader_program->Bind();
+		vao_1buffer->Bind();
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		ImGuiIO& io = ImGui::GetIO();
@@ -182,7 +186,19 @@ namespace engine {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::ShowDemoWindow();
+		// ImGui::ShowDemoWindow();
+		static bool use_2_buffers = true;
+		ImGui::Checkbox("2 Buffers", &use_2_buffers);
+
+		if (use_2_buffers) {
+			shader_program->Bind();
+			vao_2buffers->Bind();
+		} else {
+			shader_program->Bind();
+			vao_1buffer->Bind();
+		}
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		ImGui::Begin("Background color window");
 		ImGui::ColorEdit4("Background color", m_background_color);

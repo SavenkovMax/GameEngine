@@ -43,7 +43,7 @@ namespace engine {
 
 		GLFWwindow* m_window{ nullptr };
 		WindowData m_data;
-		float m_background_color[4]{ 1.f, 0.f, 0.f, 0.f };
+		float m_background_color[4]{ 0.f, 0.f, 0.f, 0.f };
 	};
 
 }

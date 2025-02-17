@@ -81,6 +81,8 @@ namespace engine {
 		glDetachShader(m_shader_program, fragment_shader_id);
 		glDeleteShader(vertex_shader_id);
 		glDeleteShader(fragment_shader_id);
+
+		m_is_compiled = true;
 	}
 
 	void GLSLShaderProgram::Bind() const {
@@ -88,7 +90,7 @@ namespace engine {
 	}
 
 	void GLSLShaderProgram::Unbind() {
-		glUseProgram(static_cast<GLuint>(0));
+		glUseProgram(0);
 	}
 
 } // namespace engine

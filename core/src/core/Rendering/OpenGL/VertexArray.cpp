@@ -13,9 +13,10 @@ namespace engine {
 		glDeleteVertexArrays(1, &m_id);
 	}
 
-	VertexArray::VertexArray(VertexArray&& other) noexcept {
-		m_id = other.m_id;
-		m_elements_count = other.m_elements_count;
+	VertexArray::VertexArray(VertexArray&& other) noexcept 
+		: m_id(other.m_id),
+		  m_elements_count(other.m_elements_count)
+	{
 		other.m_id = 0;
 		other.m_elements_count = 0;
 	}
@@ -32,10 +33,18 @@ namespace engine {
 		Bind();
 		vertex_buffer.Bind();
 
-		glEnableVertexAttribArray(m_elements_count);
-		glVertexAttribPointer(m_elements_count, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		++m_elements_count;
+		for (const BufferElement& curr_element : vertex_buffer.GetLayout().GetElements()) {
+			glEnableVertexAttribArray(m_elements_count);
+			glVertexAttribPointer(
+				m_elements_count,
+				static_cast<GLint>(curr_element.components_count),
+				curr_element.component_type,
+				GL_FALSE,
+				static_cast<GLsizei>(vertex_buffer.GetLayout().GetStride()),
+				reinterpret_cast<const void*>(curr_element.offset)
+			);
+			++m_elements_count;
+		}
 	}
 
 	void VertexArray::Bind() const {
