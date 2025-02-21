@@ -11,54 +11,53 @@
 #include "core/Rendering/OpenGL/GLSLShaderProgram.hpp"
 #include "core/Rendering/OpenGL/VertexBuffer.hpp"
 #include "core/Rendering/OpenGL/VertexArray.hpp"
+#include "core/Rendering/OpenGL/IndexBuffer.hpp"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace engine {
 
 	static bool is_GLFW_initialized = false;
 
-	GLfloat points[] = {
-		0.f, 0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f
-	};
-
-	GLfloat colors[] = {
-		1.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 1.0f
-	};
-
 	GLfloat positions_colors[] = {
-		0.f, 0.5f, 0.0f,    0.0f, 1.0f, 0.0f,
-		0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, -0.5f, 0.0f,	1.0f, 0.0f, 0.0f,
+		-0.5f, 0.5f, 0.0f,	0.0f, 0.0f, 1.0f,
+		0.5f, 0.5f, 0.0f,	1.0f, 0.0f, 0.0f,
+	};
+
+	GLuint indices[] = {
+		0, 1, 2, 3, 2, 1
 	};
 
 	const char* vertex_shader =
-		"#version 460\n"
-		"layout(location = 0) in vec3 vertex_position;"
-		"layout(location = 1) in vec3 vertex_color;"
-		"out vec3 color;"
-		"void main() {"
-		"	color = vertex_color;"
-		"	gl_Position = vec4(vertex_position, 1.0);"
-		"}";
+		R"(#version 460
+		layout(location = 0) in vec3 vertex_position;
+		layout(location = 1) in vec3 vertex_color;
+		uniform mat4 model_matrix;
+		out vec3 color;
+		void main() {
+			color = vertex_color;
+			gl_Position = model_matrix * vec4(vertex_position, 1.0);
+		})";
 
 	const char* fragment_shader =
-		"#version 460\n"
-		"in vec3 color;"
-		"out vec4 frag_color;"
-		"void main() {"
-		"	frag_color = vec4(color, 1.0);"
-		"}";
+		R"(#version 460
+		in vec3 color;
+		out vec4 frag_color;
+		void main() {
+			frag_color = vec4(color, 1.0);
+		})";
 
 	std::unique_ptr<GLSLShaderProgram> shader_program;
-	std::unique_ptr<VertexBuffer> points_vbo;
-	std::unique_ptr<VertexBuffer> colors_vbo;
 	std::unique_ptr<VertexBuffer> positions_colors_vbo;
-
-	std::unique_ptr<VertexArray> vao_2buffers;
-	std::unique_ptr<VertexArray> vao_1buffer;
+	std::unique_ptr<IndexBuffer> index_buffer;
+	std::unique_ptr<VertexArray> vao;
+	glm::vec3 scale_factors(0.5f, 1.5f, 1.0f);
+	float rotate = 0.f;
+	glm::vec3 translate(0.f, 0.f, 1.f);
 
 
 	Window::Window(std::string title, unsigned int width, unsigned int height)
@@ -142,25 +141,16 @@ namespace engine {
 			return -1;
 		}
 
-		BufferLayout buffer_layout_1vec3{
-			ShaderDataType::Float3
-		};
-
-		points_vbo = std::make_unique<VertexBuffer>(points, sizeof(points), buffer_layout_1vec3);
-		colors_vbo = std::make_unique<VertexBuffer>(colors, sizeof(colors), buffer_layout_1vec3);
-
-		vao_2buffers = std::make_unique<VertexArray>();
-		vao_2buffers->AddBuffer(*points_vbo);
-		vao_2buffers->AddBuffer(*colors_vbo);
-
 		BufferLayout buffer_layout_2vec3{
 			ShaderDataType::Float3,
 			ShaderDataType::Float3
 		};
 
-		vao_1buffer = std::make_unique<VertexArray>();
+		vao = std::make_unique<VertexArray>();
 		positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors, sizeof(positions_colors), buffer_layout_2vec3);
-		vao_1buffer->AddBuffer(*positions_colors_vbo);
+		index_buffer = std::make_unique<IndexBuffer>(indices, sizeof(indices) / sizeof(GLuint));
+		vao->AddVertexBuffer(*positions_colors_vbo);
+		vao->SetIndexBuffer(*index_buffer);
 
 		return 0;
 	}
@@ -175,8 +165,17 @@ namespace engine {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		shader_program->Bind();
-		vao_1buffer->Bind();
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glm::mat4 transform = glm::mat4(1.0f);
+		glm::vec3 axis(0.0f, 0.f, 1.0f);
+		float rotate_in_radians = glm::radians(rotate);
+		transform = glm::scale(transform, scale_factors);
+		transform = glm::rotate(transform, rotate_in_radians, axis);
+		transform = glm::translate(transform, translate);
+
+		shader_program->SetMatrix4("model_matrix", transform);
+
+		vao->Bind();
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vao->GetIndicesCount()), GL_UNSIGNED_INT, nullptr);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize.x = static_cast<float>(GetWidth());
@@ -187,21 +186,12 @@ namespace engine {
 		ImGui::NewFrame();
 
 		// ImGui::ShowDemoWindow();
-		static bool use_2_buffers = true;
-		ImGui::Checkbox("2 Buffers", &use_2_buffers);
-
-		if (use_2_buffers) {
-			shader_program->Bind();
-			vao_2buffers->Bind();
-		} else {
-			shader_program->Bind();
-			vao_1buffer->Bind();
-		}
-
-		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		ImGui::Begin("Background color window");
 		ImGui::ColorEdit4("Background color", m_background_color);
+		ImGui::SliderFloat3("Scale", glm::value_ptr(scale_factors), 0.f, 2.0f);
+		ImGui::SliderFloat("Rotate", &rotate, 0.f, 360.f);
+		ImGui::SliderFloat3("Translate", glm::value_ptr(translate), -1.f, 1.f);
 		ImGui::End();
 
 		ImGui::Render();

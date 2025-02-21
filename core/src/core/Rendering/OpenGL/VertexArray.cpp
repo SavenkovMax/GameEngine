@@ -29,7 +29,7 @@ namespace engine {
 		return *this;
 	}
 
-	void VertexArray::AddBuffer(const VertexBuffer& vertex_buffer) {
+	void VertexArray::AddVertexBuffer(const VertexBuffer& vertex_buffer) {
 		Bind();
 		vertex_buffer.Bind();
 
@@ -45,6 +45,12 @@ namespace engine {
 			);
 			++m_elements_count;
 		}
+	}
+
+	void VertexArray::SetIndexBuffer(const IndexBuffer& index_buffer) {
+		Bind();
+		index_buffer.Bind();
+		m_indices_count += index_buffer.GetCount();
 	}
 
 	void VertexArray::Bind() const {

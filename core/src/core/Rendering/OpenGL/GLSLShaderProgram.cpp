@@ -2,6 +2,7 @@
 #include "core/Log.hpp"
 
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace engine {
 
@@ -91,6 +92,10 @@ namespace engine {
 
 	void GLSLShaderProgram::Unbind() {
 		glUseProgram(0);
+	}
+
+	void GLSLShaderProgram::SetMatrix4(const char* name, const glm::mat4& mat) {
+		glUniformMatrix4fv(glGetUniformLocation(m_shader_program, name), 1, GL_FALSE, glm::value_ptr(mat));
 	}
 
 } // namespace engine

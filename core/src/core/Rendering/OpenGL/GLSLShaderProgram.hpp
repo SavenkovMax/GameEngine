@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 
 namespace engine {
 
@@ -16,6 +17,8 @@ namespace engine {
 
 		void Bind() const;
 		static void Unbind();
+
+		void SetMatrix4(const char* name, const glm::mat4& mat);
 
 		bool IsCompiled() const noexcept {
 			return m_is_compiled;

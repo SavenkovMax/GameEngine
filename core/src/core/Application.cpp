@@ -22,12 +22,12 @@ namespace engine {
 
 		m_event_dispatcher.AddEventListener<EventMouseMoved>(
 			[](EventMouseMoved& event) {
-				LOG_INFO("[MouseMoved] Mouse moved to {0}x{1}", event.x, event.y);
+				
 			});
 
 		m_event_dispatcher.AddEventListener<EventWindowResize>(
 			[](EventWindowResize& event) {
-				LOG_INFO("[Resized] Changed size to {0}x{1}", event.height, event.height);
+				
 			});
 
 		m_event_dispatcher.AddEventListener<EventWindowClose>(
