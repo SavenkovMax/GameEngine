@@ -7,6 +7,7 @@ set(CORE_PUBLIC_INCLUDES
 	includes/core/Application.hpp
 	includes/core/Log.hpp
 	includes/core/Event.hpp
+	includes/core/Camera.hpp
 )
 
 set(CORE_PRIVATE_INCLUDES
@@ -20,6 +21,7 @@ set(CORE_PRIVATE_INCLUDES
 set(CORE_PRIVATE_SOURCES
 	src/core/Application.cpp
 	src/core/Window.cpp
+	src/core/Camera.cpp
 	src/core/Rendering/OpenGL/GLSLShaderProgram.cpp
 	src/core/Rendering/OpenGL/VertexBuffer.cpp
 	src/core/Rendering/OpenGL/VertexArray.cpp
