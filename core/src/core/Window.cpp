@@ -1,7 +1,6 @@
 #include "core/Window.hpp"
 #include "core/Log.hpp"
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <imgui/imgui.h>
@@ -12,14 +11,14 @@
 #include "core/Rendering/OpenGL/VertexBuffer.hpp"
 #include "core/Rendering/OpenGL/VertexArray.hpp"
 #include "core/Rendering/OpenGL/IndexBuffer.hpp"
+#include "core/Camera.hpp"
+#include "core/Rendering/OpenGL/RendererOGL.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace engine {
-
-	static bool is_GLFW_initialized = false;
 
 	GLfloat positions_colors[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
@@ -37,10 +36,11 @@ namespace engine {
 		layout(location = 0) in vec3 vertex_position;
 		layout(location = 1) in vec3 vertex_color;
 		uniform mat4 model_matrix;
+		uniform mat4 view_projection_matrix;
 		out vec3 color;
 		void main() {
 			color = vertex_color;
-			gl_Position = model_matrix * vec4(vertex_position, 1.0);
+			gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0);
 		})";
 
 	const char* fragment_shader =
@@ -55,9 +55,15 @@ namespace engine {
 	std::unique_ptr<VertexBuffer> positions_colors_vbo;
 	std::unique_ptr<IndexBuffer> index_buffer;
 	std::unique_ptr<VertexArray> vao;
+
 	glm::vec3 scale_factors(0.5f, 1.5f, 1.0f);
 	float rotate = 0.f;
 	glm::vec3 translate(0.f, 0.f, 1.f);
+
+	glm::vec3 camera_position(0.0f, 0.0f, 1.0f);
+	glm::vec3 camera_rotation(0.f, 0.f, 0.f);
+	bool perspective_camera = false;
+	Camera camera;
 
 
 	Window::Window(std::string title, unsigned int width, unsigned int height)
@@ -77,25 +83,23 @@ namespace engine {
 	int Window::Init() {
 		LOG_INFO("Creating window '{0}' with size {1}x{2}", m_data.title, m_data.width, m_data.height);
 
-		if (!is_GLFW_initialized) {
-			if (!glfwInit()) {
-				LOG_CRITICAL("Can't initialize GLFW!");
-				return -1;
-			}
-			is_GLFW_initialized = true;
+		glfwSetErrorCallback([](int error_code, const char* desc) {
+			LOG_CRITICAL("GLFW error code {0}: {1}", error_code, desc);
+		});
+
+		if (!glfwInit()) {
+			LOG_CRITICAL("Can't initialize GLFW!");
+			return -1;
 		}
 
 		m_window = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
 		if (!m_window) {
 			LOG_CRITICAL("Can't create window {0} with size {1}x{2}", m_data.title, m_data.width, m_data.height);
-			glfwTerminate();
 			return -2;
 		}
 
-		glfwMakeContextCurrent(m_window);
-
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-			LOG_CRITICAL("Failed to initialize GLAD");
+		if (!RendererOGL::Init(m_window)) {
+			LOG_CRITICAL("Failed to initialize OpenGL renderer");
 			return -3;
 		}
 
@@ -132,7 +136,7 @@ namespace engine {
 
 		glfwSetFramebufferSizeCallback(m_window,
 			[](GLFWwindow* pWindow, int width, int height) {
-				glViewport(0, 0, width, height);
+				RendererOGL::SetViewport(0, 0, width, height);
 			}
 		);
 
@@ -161,8 +165,8 @@ namespace engine {
 	}
 
 	void Window::OnUpdate() {
-		glClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
-		glClear(GL_COLOR_BUFFER_BIT);
+		RendererOGL::SetClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
+		RendererOGL::Clear();
 
 		shader_program->Bind();
 		glm::mat4 transform = glm::mat4(1.0f);
@@ -171,11 +175,12 @@ namespace engine {
 		transform = glm::scale(transform, scale_factors);
 		transform = glm::rotate(transform, rotate_in_radians, axis);
 		transform = glm::translate(transform, translate);
-
 		shader_program->SetMatrix4("model_matrix", transform);
+		camera.SetPositionRotation(camera_position, camera_rotation);
+		camera.SetProjectionMode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+		shader_program->SetMatrix4("view_projection_matrix", camera.GetProjectionMatrix() * camera.GetViewMatrix());
 
-		vao->Bind();
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vao->GetIndicesCount()), GL_UNSIGNED_INT, nullptr);
+		RendererOGL::Draw(*vao);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize.x = static_cast<float>(GetWidth());
@@ -192,6 +197,9 @@ namespace engine {
 		ImGui::SliderFloat3("Scale", glm::value_ptr(scale_factors), 0.f, 2.0f);
 		ImGui::SliderFloat("Rotate", &rotate, 0.f, 360.f);
 		ImGui::SliderFloat3("Translate", glm::value_ptr(translate), -1.f, 1.f);
+		ImGui::SliderFloat3("Camera position", glm::value_ptr(camera_position), -10.f, 10.f);
+		ImGui::SliderFloat3("Camera rotation", glm::value_ptr(camera_rotation), 0.f, 360.f);
+		ImGui::Checkbox("Perspective", &perspective_camera);
 		ImGui::End();
 
 		ImGui::Render();

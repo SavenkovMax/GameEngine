@@ -24,14 +24,34 @@ namespace engine {
 
 		glm::mat4 translate_matrix = glm::translate(glm::mat4(1.0f), m_position);
 
-		m_view_matrix = rotation_matrix * translate_matrix;
+		m_view_matrix = translate_matrix * rotation_matrix;
+		m_view_matrix = glm::inverse(m_view_matrix);
 	}
 
 	void Camera::UpdateProjectionMatrix() {
 		if (m_projection_mode == ProjectionMode::Perspective) {
+			float r = 0.1f;
+			float t = 0.1f;
+			float f = 10.f;
+			float n = 0.1f;
+			m_projection_matrix = glm::mat4(
+				n / r, 0, 0, 0,
+				0, n / t, 0, 0,
+				0, 0, (-f - n) / (f - n), -1,
+				0, 0, -2 * f * n / (f - n), 0
+			);
 
 		} else {
-
+			float r = 2.f;
+			float t = 2.f;
+			float f = 100.f;
+			float n = 0.1f;
+			m_projection_matrix = glm::mat4(
+				1 / r, 0, 0, 0,
+				0, 1 / t, 0, 0,
+				0, 0, -2 / (f - n), 0,
+				0, 0, (-f - n) / (f - n), 1
+			);
 		}
 	}
 
