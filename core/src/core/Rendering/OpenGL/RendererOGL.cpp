@@ -17,9 +17,9 @@ namespace engine {
 		}
 
 		LOG_INFO("OpenGL context initialized");
-		LOG_INFO("	Vendor: {0}", GetVendorStr());
-		LOG_INFO("	Renderer: {0}", GetRendererStr());
-		LOG_INFO("	Version: {0}", GetVersionStr());
+		LOG_INFO("Vendor: {0}", GetVendorStr());
+		LOG_INFO("Renderer: {0}", GetRendererStr());
+		LOG_INFO("Version: {0}", GetVersionStr());
 
 		return true;
 	}

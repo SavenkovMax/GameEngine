@@ -1,7 +1,9 @@
 #pragma once
 
+#include "core/Core.hpp"
 #include "core/Event.hpp"
-
+#include "core/Camera.hpp"
+#include <glm/glm.hpp>
 #include <memory>
 
 namespace engine {
@@ -19,6 +21,12 @@ namespace engine {
 		virtual int Start(unsigned int window_width, unsigned int window_height, const char* title);
 
 		virtual void OnUpdate() {}
+		virtual void OnUIDraw() {}
+
+		glm::vec3 camera_position = { 0.f, 0.f, -1.0f };
+		glm::vec3 camera_rotation = { 0.f, 0.f, 0.f };
+		bool perspective_camera = true;
+		Camera camera;
 
 	private:
 		std::unique_ptr<class Window> m_window;

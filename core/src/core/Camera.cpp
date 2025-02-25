@@ -25,7 +25,6 @@ namespace engine {
 		glm::mat4 translate_matrix = glm::translate(glm::mat4(1.0f), m_position);
 
 		m_view_matrix = translate_matrix * rotation_matrix;
-		m_view_matrix = glm::inverse(m_view_matrix);
 	}
 
 	void Camera::UpdateProjectionMatrix() {

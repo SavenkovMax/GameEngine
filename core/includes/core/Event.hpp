@@ -1,11 +1,13 @@
 #pragma once
 
+#include "KeyCodes.hpp"
+
 #include <functional>
 #include <array>
 
 namespace engine {
 
-	enum class EventType {
+	enum class EventType : uint8_t {
 		WindowResize = 0,
 		WindowClose,
 
@@ -88,5 +90,32 @@ namespace engine {
 		}
 
 		static const EventType type = EventType::WindowClose;
+	};
+
+	struct EventKeyPressed : public BaseEvent {
+		EventKeyPressed(KeyCode key_code, bool repeated) : key_code(key_code), repeated(repeated) {
+
+		}
+
+		virtual EventType GetType() const override {
+			return type;
+		}
+
+		KeyCode key_code;
+		bool repeated;
+		static const EventType type = EventType::KeyPressed;
+	};
+
+	struct EventKeyReleased : public BaseEvent {
+		EventKeyReleased(KeyCode key_code) : key_code(key_code) {
+
+		}
+
+		virtual EventType GetType() const override {
+			return type;
+		}
+
+		KeyCode key_code;
+		static const EventType type = EventType::KeyReleased;
 	};
 }

@@ -4,6 +4,10 @@ set(CORE_PROJECT_NAME GameEngineCore)
 project(${CORE_PROJECT_NAME})
 
 set(CORE_PUBLIC_INCLUDES
+	includes/core/Core.hpp
+	includes/core/MouseCodes.hpp
+	includes/core/KeyCodes.hpp
+	includes/core/Input.hpp
 	includes/core/Application.hpp
 	includes/core/Log.hpp
 	includes/core/Event.hpp
@@ -17,17 +21,20 @@ set(CORE_PRIVATE_INCLUDES
 	src/core/Rendering/OpenGL/VertexArray.hpp
 	src/core/Rendering/OpenGL/IndexBuffer.hpp
 	src/core/Rendering/OpenGL/RendererOGL.hpp
+	src/core/Modules/UIModule.hpp
 )
 
 set(CORE_PRIVATE_SOURCES
 	src/core/Application.cpp
 	src/core/Window.cpp
 	src/core/Camera.cpp
+	src/core/Input.cpp
 	src/core/Rendering/OpenGL/GLSLShaderProgram.cpp
 	src/core/Rendering/OpenGL/VertexBuffer.cpp
 	src/core/Rendering/OpenGL/VertexArray.cpp
 	src/core/Rendering/OpenGL/IndexBuffer.cpp
 	src/core/Rendering/OpenGL/RendererOGL.cpp
+	src/core/Modules/UIModule.cpp
 )
 
 set(CORE_ALL_SOURCES
