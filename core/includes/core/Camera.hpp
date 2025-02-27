@@ -24,6 +24,18 @@ namespace engine {
 		glm::mat4 GetViewMatrix() const { return m_view_matrix; }
 		glm::mat4 GetProjectionMatrix() const { return m_projection_matrix; }
 
+		void MoveForward(float delta_forward) {
+			m_position += m_direction * delta_forward;
+		}
+		
+		void MoveRight(float delta_right) {
+			m_position += m_direction * delta_right;
+		}
+
+		void MoveUp(float delta_up) {
+			m_position += m_direction * delta_up;
+		}
+
 	private:
 		void UpdateViewMatrix();
 		void UpdateProjectionMatrix();
@@ -33,6 +45,11 @@ namespace engine {
 		glm::mat4 m_projection_matrix{};
 		glm::vec3 m_position{};
 		glm::vec3 m_rotation{};
+
+		glm::vec3 m_direction{};
+		glm::vec3 m_right{};
+		glm::vec3 m_up{};
+
 		ProjectionMode m_projection_mode{};
 	};
 

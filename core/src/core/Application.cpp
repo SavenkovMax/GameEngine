@@ -10,6 +10,8 @@
 #include "core/Rendering/OpenGL/RendererOGL.hpp"
 #include "core/Camera.hpp"
 
+#include "core/Timestep.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -74,7 +76,15 @@ namespace engine {
 	}
 
 
-	int Application::Start(unsigned int window_width, unsigned int window_height, const char* title) {
+	void Application::PushLayer(Layer* layer) {
+		m_layer_stack.PushLayer(layer);
+	}
+
+	void Application::PushOverlay(Layer* layer) {
+		m_layer_stack.PushOverlay(layer);
+	}
+
+	int Application::Run(unsigned int window_width, unsigned int window_height, const char* title) {
 		m_window = std::make_unique<Window>(title, window_width, window_height);
 
 		m_event_dispatcher.AddEventListener<EventMouseMoved>(
@@ -90,7 +100,7 @@ namespace engine {
 		m_event_dispatcher.AddEventListener<EventWindowClose>(
 			[&](EventWindowClose& event) {
 				LOG_INFO("[WindowClose]");
-				m_close_window = true;
+				m_is_running = false;
 			});
 
 		m_event_dispatcher.AddEventListener<EventKeyPressed>(
@@ -129,29 +139,40 @@ namespace engine {
 		vao->AddVertexBuffer(*positions_colors_vbo);
 		vao->SetIndexBuffer(*index_buffer);
 
-		while (!m_close_window) {
-			RendererOGL::SetClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
-			RendererOGL::Clear();
+		while (m_is_running) {
+			float time = static_cast<float>(glfwGetTime());
+			Timestep timestep = time - m_last_frame_time;
+			m_last_frame_time = time;
 
-			shader_program->Bind();
-			glm::mat4 transform = glm::mat4(1.0f);
-			glm::vec3 axis(0.0f, 0.f, 1.0f);
-			float rotate_in_radians = glm::radians(rotate);
-			transform = glm::scale(transform, { scale[0], scale[1], scale[2] });
-			transform = glm::rotate(transform, rotate_in_radians, axis);
-			transform = glm::translate(transform, {translate[0], translate[1], translate[2]});
-			shader_program->SetMatrix4("model_matrix", transform);
-			camera.SetPositionRotation(camera_position, camera_rotation);
-			camera.SetProjectionMode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
-			shader_program->SetMatrix4("view_projection_matrix", camera.GetProjectionMatrix() * camera.GetViewMatrix());
+			if (!m_is_window_minimized) {
 
-			RendererOGL::Draw(*vao);
+				RendererOGL::SetClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
+				RendererOGL::Clear();
 
-			UIModule::OnUIDrawBegin();
-			OnUIDraw();
-			UIModule::OnUIDrawEnd();
+				shader_program->Bind();
+				glm::mat4 transform = glm::mat4(1.0f);
+				glm::vec3 axis(0.0f, 0.f, 1.0f);
+				float rotate_in_radians = glm::radians(rotate);
+				transform = glm::scale(transform, { scale[0], scale[1], scale[2] });
+				transform = glm::rotate(transform, rotate_in_radians, axis);
+				transform = glm::translate(transform, { translate[0], translate[1], translate[2] });
+				shader_program->SetMatrix4("model_matrix", transform);
+				camera.SetPositionRotation(camera_position, camera_rotation);
+				camera.SetProjectionMode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+				shader_program->SetMatrix4("view_projection_matrix", camera.GetProjectionMatrix() * camera.GetViewMatrix());
 
-			m_window->OnUpdate();
+				RendererOGL::Draw(*vao);
+
+				for (Layer* layer : m_layer_stack) {
+					layer->OnUpdate(timestep);
+				}
+
+				UIModule::OnUIDrawBegin();
+				OnUIDraw();
+				UIModule::OnUIDrawEnd();
+
+				m_window->OnUpdate();
+			}
 			OnUpdate();
 		}
 		m_window = nullptr;

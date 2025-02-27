@@ -12,6 +12,9 @@ set(CORE_PUBLIC_INCLUDES
 	includes/core/Log.hpp
 	includes/core/Event.hpp
 	includes/core/Camera.hpp
+	includes/core/LayerStack.hpp
+	includes/core/Layer.hpp
+	includes/core/Timestep.hpp
 )
 
 set(CORE_PRIVATE_INCLUDES
@@ -25,6 +28,8 @@ set(CORE_PRIVATE_INCLUDES
 )
 
 set(CORE_PRIVATE_SOURCES
+	src/core/Layer.cpp
+	src/core/LayerStack.cpp
 	src/core/Application.cpp
 	src/core/Window.cpp
 	src/core/Camera.cpp

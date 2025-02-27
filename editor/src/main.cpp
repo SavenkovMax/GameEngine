@@ -50,7 +50,7 @@ class EngineEditor : public engine::Application {
 int main() {
 	auto myApp = std::make_unique<EngineEditor>();
 
-	int returnCode = myApp->Start(1024, 768, "Engine editor");
+	int returnCode = myApp->Run(1024, 768, "Engine editor");
 
 	std::cin.get();
 

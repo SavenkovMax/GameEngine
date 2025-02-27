@@ -3,6 +3,8 @@
 #include "core/Core.hpp"
 #include "core/Event.hpp"
 #include "core/Camera.hpp"
+#include "core/LayerStack.hpp"
+#include "core/Layer.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -18,7 +20,10 @@ namespace engine {
 		Application& operator=(const Application&) = delete;
 		Application& operator=(Application&&) = delete;
 
-		virtual int Start(unsigned int window_width, unsigned int window_height, const char* title);
+		virtual int Run(unsigned int window_width, unsigned int window_height, const char* title);
+
+		void PushLayer(Layer* layer);
+		void PushOverlay(Layer* layer);
 
 		virtual void OnUpdate() {}
 		virtual void OnUIDraw() {}
@@ -30,9 +35,13 @@ namespace engine {
 
 	private:
 		std::unique_ptr<class Window> m_window;
+		float m_last_frame_time{ 0.f };
 
+		LayerStack m_layer_stack{};
 		EventDispatcher m_event_dispatcher;
-		bool m_close_window = false;
+
+		bool m_is_running{ true };
+		bool m_is_window_minimized{ false };
 	};
 
 }
